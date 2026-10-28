@@ -1,0 +1,12 @@
+{
+  "_comment": "Sepolia deployment record for Stepwell MeetupAssurance. Updated upon Sepolia broadcast.",
+  "network": "sepolia",
+  "chainId": 11155111,
+  "contractName": "MeetupAssurance",
+  "status": "pending_deployment",
+  "contractAddress": "",
+  "transactionHash": "",
+  "targetWei": "100000000000000000",
+  "deadline": "1794000000",
+  "beneficiary": ""
+}
