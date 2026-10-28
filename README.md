@@ -8,18 +8,35 @@
 
 ---
 
+## Executive Summary (Buildathon Project Description)
+
+**Stepwell** is a trustless, decentralized assurance crowdfunding application designed for grassroots Web3 communities. Built for the **Road to Devcon XI Indore Chapter**, Stepwell solves the classic community coordination failure where organizers must commit personal funds for venue deposits while attendees hesitate to RSVP without knowing if the event will succeed.
+
+### How It Works
+1. **Target-Driven Escrow:** An organizer defines three immutable parameters: a funding target (e.g. 0.1 ETH), a strict deadline timestamp, and a designated beneficiary address.
+2. **Success & Collection:** If community pledges meet or exceed the funding target before the deadline, the campaign succeeds. Only the immutable beneficiary can trigger the one-time withdrawal (`collect()`) to secure the venue. If an optional sponsor bonus was deposited, it is transferred along with community pledges to fund refreshments.
+3. **Failure & Pull Refunds:** If community pledges fall short of the target when the deadline expires, the campaign fails. Every participant can independently pull 100% of their pledged ETH directly from the smart contract via `claimRefund()`.
+4. **Dominant Assurance Bonus:** To incentivize early participation, an organizer or ecosystem sponsor can fund an assurance bonus pool (`fundBonus()`). In a failed campaign, 100% of this bonus pool is distributed proportionally to pledgers on top of their full refund, ensuring participants face zero downside. Any division remainder dust is awarded to the final claimant, leaving zero stranded ETH.
+5. **Why Smart Contracts & Pull-Based Refunds:** Unlike Web2 RSVP forms or centralized crowdfunding platforms that charge steep fees, delay payouts, or risk custodian insolvency, Stepwell enforces rules immutably onchain. Pull-based individual refunds eliminate loops over contributor arrays, permanently preventing Denial of Service (DoS) gas limit attacks.
+
+### Prototype Scope & Limitations
+- **Current State:** Stepwell is a buildathon MVP developed for demonstration on local Foundry Anvil (Chain ID `31337`) with full test coverage (31 passing tests) and a reactive React 19 frontend.
+- **Not in Production:** This prototype has not undergone external formal third-party security audits and is not yet deployed on Ethereum Mainnet or public testnets. Real-world adoption and live Sepolia broadcast remain pending independent verification of organizer wallet ownership.
+
+---
+
 ## 1. Problem Statement
 
 Organizing grassroots Web3 events in student communities often faces a critical coordination problem:
 
-**Meera**, the local organizer of the **Road to Devcon XI** chapter in **Indore, India**, wants to host a full-day Ethereum workshop for **60 college students**. To secure the conference hall, the venue manager requires a venue deposit upfront.
+**Meera**, the local organizer of the **Road to Devcon XI** chapter in **Indore, India**, wants to host a full-day Ethereum workshop for **60 college students**. To secure the conference hall, the venue manager requires a venue deposit upfront of **0.1 ETH**.
 
 In previous events, organizers relied on WhatsApp group commitments or informal UPI promises. When the day arrived:
-- Multiple attendees backed out at the last moment.
+- Attendees backed out at the last moment (*attendance dropouts are framed here as an illustrative coordination failure scenario*).
 - The organizer was left covering the venue deposit out of her own pocket.
 - Alternatively, if the organizer canceled early to avoid loss, students who had made travel plans were left frustrated.
 
-Informal commitments lack verifiable commitment. Traditional crowdfunding platforms charge steep platform fees, take weeks to pay out, and introduce centralized custody risks.
+Informal commitments lack verifiable financial commitment. Conventional crowdfunding services can also introduce platform fees, centralized custody, and payout delays.
 
 ---
 
@@ -28,7 +45,7 @@ Informal commitments lack verifiable commitment. Traditional crowdfunding platfo
 **Stepwell** introduces trustless assurance crowdfunding powered by an immutable Ethereum smart contract (`MeetupAssurance.sol`).
 
 - **All-or-Nothing Escrow:** Participants pledge test ETH toward a fixed target before an immutable deadline.
-- **Outcome A — Success:** If total community pledges meet or exceed the venue deposit target by the deadline, only the designated organizer/beneficiary can collect the funds in a single transaction.
+- **Outcome A — Success:** If total community pledges meet or exceed the venue deposit target by the deadline, only the designated organizer/beneficiary can collect the funds (along with any deposited bonus pool) in a single transaction.
 - **Outcome B — Failure:** If pledges fall short of the target when the deadline passes, every participant can independently claim 100% of their pledged ETH back.
 - **Dominant Assurance Bonus:** To overcome student coordination hesitation, the organizer or an ecosystem sponsor can deposit a bonus pool. If the campaign fails, this entire bonus is distributed proportionally to pledgers on top of their full refund. Pledgers face **zero financial downside** to chip in early.
 
@@ -150,8 +167,8 @@ stepwell-assurance/
 
 ```bash
 # Clone the repository
-git clone <REPO_URL>
-cd stepwell-assurance
+git clone https://github.com/nikitabiradar231/stepwell-assuranceP1.git
+cd stepwell-assuranceP1
 
 # Install smart contract libraries via git submodules
 git submodule update --init --recursive
@@ -301,24 +318,25 @@ You can test the entire lifecycle locally using Foundry's Anvil testnode.
    SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
    PRIVATE_KEY=<YOUR_TESTNET_DEPLOYER_PRIVATE_KEY>
    CAMPAIGN_TARGET_WEI=100000000000000000 # 0.1 ETH
-   CAMPAIGN_DEADLINE=1794000000            # Future Unix timestamp
+   # Omit or comment out CAMPAIGN_DEADLINE to automatically evaluate dynamic 7-day deadline (block.timestamp + 7 days)
+   # CAMPAIGN_DEADLINE=1794000000
    CAMPAIGN_BENEFICIARY=0xMeeraOrganizerAddress
    ETHERSCAN_API_KEY=<OPTIONAL_ETHERSCAN_KEY>
    ```
 
 > [!CAUTION]
-> Never commit your `.env` file or disclose testnet private keys. The `.gitignore` file is configured to exclude all `.env*` files automatically.
+> Never commit your `.env` file or disclose testnet private keys. The `.gitignore` file is configured to exclude all `.env*` files automatically. Ethereum Mainnet is strictly prohibited.
 
-### Broadcast Command
+### Broadcast Command (Once Authorized)
 
 **Windows PowerShell:**
 ```powershell
 $env:SEPOLIA_RPC_URL = "https://ethereum-sepolia-rpc.publicnode.com"
 $env:PRIVATE_KEY = "<YOUR_PRIVATE_KEY>"
 $env:CAMPAIGN_TARGET_WEI = "100000000000000000"
-$env:CAMPAIGN_DEADLINE = "1794000000"
-$env:CAMPAIGN_BENEFICIARY = "<BENEFICIARY_ADDRESS>"
+$env:CAMPAIGN_BENEFICIARY = "<CONFIRMED_BENEFICIARY_ADDRESS>"
 
+# Executes deployment with dynamic 7-day deadline:
 forge script script/Deploy.s.sol --rpc-url $env:SEPOLIA_RPC_URL --broadcast --verify
 ```
 
@@ -330,9 +348,9 @@ forge script script/Deploy.s.sol --rpc-url "$SEPOLIA_RPC_URL" --broadcast --veri
 
 ### Deployment Status
 
-- **Status:** Ready for broadcast / Pending Deployer Gas
-- **Sepolia Network:** Ethereum Sepolia (Chain ID `11155111`)
-- **Manifest:** [deployments/sepolia.json](deployments/sepolia.json)
+- **Status:** 🛑 **BLOCKED** — Awaiting independent confirmation of organizer Meera's beneficiary address.
+- **Target Network:** Ethereum Sepolia (Chain ID `11155111`)
+- **Manifest:** [deployments/sepolia.json](deployments/sepolia.json) (Pending broadcast)
 - Once broadcast, update `deployments/sepolia.json` and set `DEFAULT_SEPOLIA_ADDRESS` in `frontend/src/config/contract.ts`.
 
 ---

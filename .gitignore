@@ -22,3 +22,6 @@ dist-ssr/
 Thumbs.db
 .vscode/
 .idea/
+
+# Scratch & local demo scripts
+scratch/
